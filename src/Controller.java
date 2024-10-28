@@ -67,27 +67,15 @@ public class Controller {
                 double recKey = bb.getDouble();
                 Record rec = new Record(recID, recKey);
                 heapArray[i] = rec;
+                //@TOOD: handle if there's not a full block
             }
         }
+        heap = new MinHeap<Record>(heapArray, heapArray.length, heapArray.length);
          
     }
     
     
-    /**
-     * Reads the first 8 blocks into the heap. 
-     * @throws IOException
-     */
-    private MinHeap<Record> buildHeap() throws IOException
-    {
-        Record[] records = new Record[NUM_HEAP_BLOCKS * BLOCK_SIZE];
-        for (int i = 0; i < records.length; i++) //while we're not at capacity
-        {
-            long ID = input.readLong();
-            double key = input.readDouble();
-            records[i] = new Record(ID, key);
-        }
-        return(new MinHeap<Record>(records, records.length, records.length));
-    }
+  
     
     /**
      * The overarching sort method
