@@ -5,6 +5,7 @@
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.io.File;
 
 /**
@@ -16,7 +17,7 @@ import java.io.File;
  */
 public class Controller {
     public static final int NUM_HEAP_BLOCKS = 8; //number of blocks in the heap
-    public static final int BLOCK_SIZE = 512; //number of records in a block
+    //public static final int BLOCK_SIZE = 512; //number of records in a block
     private RandomAccessFile input; //input file
     private File runfile; //created run file
     private RandomAccessFile run; //random access run file
@@ -41,13 +42,34 @@ public class Controller {
     
     private void init(String inputname) throws IOException
     {
-        runfile = new File("run.txt");
+        /*runfile = new File("run.txt");
         input = new RandomAccessFile(inputname, "rw");
         run = new RandomAccessFile("run.txt", "rw");
         heap = buildHeap();
         inBuffer = new BufferPool(input);
         inBuffer.populate();
-        outBuffer = new BufferPool(run);
+        outBuffer = new BufferPool(run);*/
+        
+        byte[] basicBuffer = new byte[ByteFile.BYTES_PER_BLOCK];
+        ByteBuffer bb = ByteBuffer.wrap(basicBuffer);
+
+        File inputfile = new File(inputname);
+        input = new RandomAccessFile(inputfile, "r");
+        input.seek(0);
+        
+        
+        Record[] heapArray = new Record[NUM_HEAP_BLOCKS * ByteFile.RECORDS_PER_BLOCK];
+        for (int block = 0; block < NUM_HEAP_BLOCKS; block++) {
+            input.read(basicBuffer); //read in the next block
+            bb.position(0); // goes to byte position zero in ByteBuffer
+            for (int i = 0; i < ByteFile.RECORDS_PER_BLOCK; i++) { //iterate through records
+                long recID = bb.getLong();
+                double recKey = bb.getDouble();
+                Record rec = new Record(recID, recKey);
+                heapArray[i] = rec;
+            }
+        }
+         
     }
     
     
@@ -75,6 +97,7 @@ public class Controller {
     {
         //step one: replacement sort
         replacementSort();
+        input.close();
     }
     
     public void replacementSort() throws IOException

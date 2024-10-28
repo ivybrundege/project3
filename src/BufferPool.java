@@ -29,7 +29,7 @@ public class BufferPool {
      */
     public BufferPool(RandomAccessFile source) {
         file = source;
-        maxSize = Controller.BLOCK_SIZE + 1; // 1 extra spot allocated for
+        maxSize = ByteFile.RECORDS_PER_BLOCK + 1; // 1 extra spot allocated for
                                              // circular queue
         buffer = new Record[maxSize];
         rear = 0;
@@ -39,6 +39,7 @@ public class BufferPool {
 
     /**
      * Reads the next record from the file
+     * @TODO: block level, not record level
      * 
      * @return whether or not the record was read.
      */
