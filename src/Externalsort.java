@@ -1,12 +1,13 @@
 /**
- * {Project Description Here}
+ * Project 3 - buffers
  */
 
 /**
  * The class containing the main method.
  *
- * @author {Your Name Here}
- * @version {Put Something Here}
+ * @author Ibrahim Shabani
+ * @author Ivy Brungege
+ * @version 10/28/2024
  */
 
 // On my honor:
@@ -36,7 +37,6 @@ public class Externalsort {
      *     Command line parameters
      */
     public static void main(String[] args) {
-        
         
     }
 

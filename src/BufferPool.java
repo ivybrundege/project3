@@ -111,7 +111,7 @@ public class BufferPool {
      * inserts the given record -- analogous to enqueue
      * 
      * @param record
-     * @return
+     * @return true if inserted
      */
     public boolean insert(Record record) {
         if (((rear + 2) % maxSize) == front) {
