@@ -1,3 +1,4 @@
+import java.io.IOException;
 import student.TestCase;
 
 /**
@@ -16,8 +17,9 @@ public class ExternalsortTest extends TestCase {
     
     /**
      * T
+     * @throws IOException 
      */
-    public void testExternalsort() {
+    public void testExternalsort() throws IOException {
         String[] args = {"MakeAFileUsingByteFile.data"};
         Externalsort.main(args);
     }

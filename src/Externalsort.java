@@ -30,14 +30,26 @@
 // during the discussion. I have violated neither the spirit nor
 // letter of this restriction.
 
+import java.io.IOException;
+
+// -------------------------------------------------------------------------
+/**
+ *  Runs the project
+ * 
+ *  @author Ibrahim Shabani
+ *  @author Ivy Brundege
+ *  @version Oct 28, 2024
+ */
 public class Externalsort {
 
     /**
      * @param args
      *     Command line parameters
+     * @throws IOException 
      */
-    public static void main(String[] args) {
-        
+    public static void main(String[] args) throws IOException {
+        Controller controller = new Controller(args[0]);
+        controller.sort();
     }
 
 }

@@ -1,6 +1,6 @@
 
 /**
- * 
+ * buffer array that we load stuff into before heap placement
  */
 
 import java.io.IOException;
@@ -66,11 +66,26 @@ public class BufferPool {
      */
     public void write() throws IOException {
         Record r = nextRecord();
+        System.out.println(r.getID());
+        System.out.println(r.getKey());
         while (r != null) {
             file.writeLong(r.getID());
             file.writeDouble(r.getKey());
         }
 
+    }
+    
+    // ----------------------------------------------------------
+    /**
+     * Place a description of your method here.
+     * @throws IOException
+     */
+    public void writeToConsole() throws IOException {
+        Record r = nextRecord();
+        while (r != null) {
+            System.out.println(r.getID());
+            System.out.println(r.getKey());
+        }
     }
 
 
@@ -102,10 +117,17 @@ public class BufferPool {
     }
 
 
+    // ----------------------------------------------------------
+    /**
+     * get length of buffer array
+     * @return
+     */
     public int length() {
         return ((rear + maxSize) - front + 1) % maxSize;
     }
 
+    // implement read block function (randaccfile object, int position to read)
+    // return byte
 
     /**
      * inserts the given record -- analogous to enqueue
