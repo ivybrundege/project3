@@ -9,6 +9,10 @@ import java.io.RandomAccessFile;
 /**
  * Handles the reading + writing logic
  * Buffer array acts as a queue so that we can add and remove values.
+ * 
+ * @author ivyb
+ * @author shabanii
+ * @version 10.28.24
  */
 public class BufferPool {
     private RandomAccessFile file;
@@ -55,7 +59,10 @@ public class BufferPool {
 
     }
 
-
+    /**
+     * Writes the current records to the given file
+     * @throws IOException
+     */
     public void write() throws IOException {
         Record r = nextRecord();
         while (r != null) {
@@ -83,7 +90,8 @@ public class BufferPool {
      * analogous to dequeue operation
      * 
      * @return The removed record
-s     */
+     *         s
+     */
     public Record nextRecord() {
         if (length() == 0)
             return null;
@@ -97,8 +105,10 @@ s     */
         return ((rear + maxSize) - front + 1) % maxSize;
     }
 
+
     /**
      * inserts the given record -- analogous to enqueue
+     * 
      * @param record
      * @return
      */
