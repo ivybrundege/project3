@@ -86,7 +86,7 @@ public class BufferPool {
      * @throws IOException
      * @TODO: keep track of where we are in file
      */
-    public void write() throws IOException {
+    public void write(int counted) throws IOException {
         // set up byte buffer-- holds everything until mem write
         basicBuffer = new byte[ByteFile.BYTES_PER_BLOCK];
         bb = ByteBuffer.wrap(basicBuffer);
@@ -94,8 +94,12 @@ public class BufferPool {
 
         // get first record + print it to console
         Record r = dequeue();
-        System.out.println(r.getID());
-        System.out.println(r.getKey());
+        System.out.print(r.getID() + " ");
+        System.out.print(r.getKey() + " ");
+        if (counted % 5 == 0)
+        {
+            System.out.println();
+        }
         while (r != null) {
             bb.putLong(r.getID());
             bb.putDouble(r.getKey());

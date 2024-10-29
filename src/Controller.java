@@ -41,17 +41,7 @@ public class Controller {
     }
 
 
-    private void init(String inputname) throws IOException {
-        /*
-         * runfile = new File("run.txt");
-         * input = new RandomAccessFile(inputname, "rw");
-         * run = new RandomAccessFile("run.txt", "rw");
-         * heap = buildHeap();
-         * inBuffer = new BufferPool(input);
-         * inBuffer.populate();
-         * outBuffer = new BufferPool(run);
-         */
-        
+    private void init(String inputname) throws IOException { 
         //set up input
         byte[] basicBuffer = new byte[ByteFile.BYTES_PER_BLOCK];
         ByteBuffer bb = ByteBuffer.wrap(basicBuffer);
@@ -111,12 +101,15 @@ public class Controller {
      * @TODO multiple runs?? potentially keep a list of removed values
      */
     public void replacementSort() throws IOException {
+        int recordsCounted = 0;
         while (heap.heapSize() != 0) {
+            
             // first, add minimum heap value to output buffer
             Record toOutput = heap.removeMin();
             outBuffer.enqueue(toOutput);
             if (outBuffer.isFull()) {
-                outBuffer.write();
+                recordsCounted++;
+                outBuffer.write(recordsCounted);
             }
 
             // then, check to see if we can add something from input
@@ -124,11 +117,10 @@ public class Controller {
             {
                 inBuffer.read();
             }
+            
             Record toHeap = inBuffer.dequeue();
             if (toHeap != null) {
-                if (toHeap.compareTo(toOutput) < 0) // toHeap < toOutput =
-                                                    // toHeap too small for this
-                                                    // run
+                if (toHeap.compareTo(toOutput) < 0) 
                 {
                     heap.insert(toHeap);
                     heap.removeMin(); // umm need to keep track of these somehow
@@ -140,7 +132,7 @@ public class Controller {
             }
         }
         if (!outBuffer.isEmpty()) {
-            outBuffer.write(); // write all remaining values
+            outBuffer.write(recordsCounted); // write all remaining values
         }
     }
     
