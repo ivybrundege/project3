@@ -5,10 +5,12 @@
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 
 /**
  * Handles the reading + writing logic
  * Buffer array acts as a queue so that we can add and remove values.
+ * Queue logic from open DSA.
  * 
  * @author ivyb
  * @author shabanii
@@ -20,6 +22,8 @@ public class BufferPool {
     private int maxSize; // Maximum size of queue
     private int front; // Index of front element
     private int rear;
+    private byte[] basicBuffer; //buffer before input/output to memory
+    private ByteBuffer bb; // bytebuffer wrapper for basic buffer
 
     /**
      * constructor
@@ -30,74 +34,74 @@ public class BufferPool {
     public BufferPool(RandomAccessFile source) {
         file = source;
         maxSize = ByteFile.RECORDS_PER_BLOCK + 1; // 1 extra spot allocated for
-                                             // circular queue
+        init(); // circular queue
+        //initialize bb for write here so that we can seek 0 for bb?
+    }
+
+
+    /**
+     * initializes/reinitializes the buffer queue
+     */
+    private void init() {
         buffer = new Record[maxSize];
         rear = 0;
         front = 1;
+        
+        basicBuffer = new byte[ByteFile.BYTES_PER_BLOCK];
+        bb = ByteBuffer.wrap(basicBuffer);
+        bb.position(0);
     }
 
 
     /**
      * Reads the next record from the file
+     * 
      * @TODO: block level, not record level
      * 
      * @return whether or not the record was read.
      */
     public boolean read() {
-        long id;
-        double key;
+        init(); //set up byte buffer + buffer array to empty
         try {
-            id = file.readLong();
-            key = file.readDouble();
+            file.read(basicBuffer);
         }
         catch (IOException e) {
-            // end of file
-            return false;
+            return false; // end of file
         }
-
-        Record r = new Record(id, key);
-        return insert(r);
+        while (bb.hasRemaining()) {
+            long recID = bb.getLong();
+            double recKey = bb.getDouble();
+            Record rec = new Record(recID, recKey);
+            enqueue(rec);
+        }
+        return true;
 
     }
 
+
+    // ----------------------------------------------------------
     /**
-     * Writes the current records to the given file
+     * Writes the (output) buffer to the file
+     * 
      * @throws IOException
+     * @TODO: keep track of where we are in file
      */
     public void write() throws IOException {
-        Record r = nextRecord();
+        // set up byte buffer-- holds everything until mem write
+        basicBuffer = new byte[ByteFile.BYTES_PER_BLOCK];
+        bb = ByteBuffer.wrap(basicBuffer);
+        bb.position(0);
+
+        // get first record + print it to console
+        Record r = dequeue();
         System.out.println(r.getID());
         System.out.println(r.getKey());
         while (r != null) {
-            file.writeLong(r.getID());
-            file.writeDouble(r.getKey());
+            bb.putLong(r.getID());
+            bb.putDouble(r.getKey());
+            r = dequeue();
         }
-
-    }
-    
-    // ----------------------------------------------------------
-    /**
-     * Place a description of your method here.
-     * @throws IOException
-     */
-    public void writeToConsole() throws IOException {
-        Record r = nextRecord();
-        while (r != null) {
-            System.out.println(r.getID());
-            System.out.println(r.getKey());
-        }
-    }
-
-
-    /**
-     * populates the whole buffer
-     */
-    public void populate() {
-        boolean moreValues = read();
-        while (moreValues) {
-            moreValues = read();
-            // while we have space in the buffer and file, read in more
-        }
+        file.write(basicBuffer);
     }
 
 
@@ -106,9 +110,9 @@ public class BufferPool {
      * analogous to dequeue operation
      * 
      * @return The removed record
-     *         s
+     * 
      */
-    public Record nextRecord() {
+    public Record dequeue() {
         if (length() == 0)
             return null;
         Record r = buffer[front];
@@ -120,28 +124,49 @@ public class BufferPool {
     // ----------------------------------------------------------
     /**
      * get length of buffer array
-     * @return
+     * 
+     * @return The length of the queue/buffer
      */
     public int length() {
         return ((rear + maxSize) - front + 1) % maxSize;
     }
 
-    // implement read block function (randaccfile object, int position to read)
-    // return byte
 
     /**
      * inserts the given record -- analogous to enqueue
      * 
      * @param record
+     *            The record to enqueue
      * @return true if inserted
      */
-    public boolean insert(Record record) {
+    public boolean enqueue(Record record) {
         if (((rear + 2) % maxSize) == front) {
             return false; // array's full-- can't add yet.
         }
         rear = (rear + 1) % maxSize; // Circular increment
+
         buffer[rear] = record;
         return true;
+    }
+
+
+    /**
+     * returns whether or not the buffer is full
+     * 
+     * @return True if buffer is full
+     */
+    public boolean isFull() {
+        return length() == maxSize - 1;
+    }
+
+
+    /**
+     * returns whether or not the buffer is empty
+     * 
+     * @return True if buffer is empty
+     */
+    public boolean isEmpty() {
+        return length() == 0;
     }
 
 }
