@@ -69,7 +69,7 @@ public class Controller {
                 long recID = bb.getLong();
                 double recKey = bb.getDouble();
                 Record rec = new Record(recID, recKey);
-                heapArray[i] = rec;
+                heapArray[i + block * ByteFile.RECORDS_PER_BLOCK] = rec;
                 // @TOOD: handle if there's not a full block
             }
         }
