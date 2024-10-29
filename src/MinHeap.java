@@ -15,6 +15,7 @@ class MinHeap<T extends Comparable<T>> {
     private T[] heap; // Pointer to the heap array
     private int capacity; // Maximum size of the heap
     private int n; // Number of active things currently in heap
+    private int hiddenIndex; //lowest index of hidden.
 
     // ----------------------------------------------------------
     /**
@@ -36,6 +37,7 @@ class MinHeap<T extends Comparable<T>> {
         n = heapSize;
         this.capacity = capacity;
         buildHeap();
+        hiddenIndex = capacity;
     }
 
 
@@ -195,6 +197,17 @@ class MinHeap<T extends Comparable<T>> {
         }
         return heap[n];
     }
+    
+    /**
+     * Remove and return minimum value
+     *
+     * @return minimum value
+     */
+    public int hide() {
+        hiddenIndex--; //add another spot
+        swap(hiddenIndex, n + 1);
+        return hiddenIndex;
+    }
 
 
     // ----------------------------------------------------------
@@ -271,5 +284,15 @@ class MinHeap<T extends Comparable<T>> {
      */
     private boolean isLessThan(int pos1, int pos2) {
         return heap[pos1].compareTo(heap[pos2]) < 0;
+    }
+    
+    public int getCapacity()
+    {
+        return capacity;
+    }
+    
+    public T getPos(int pos)
+    {
+        return heap[pos];
     }
 }

@@ -62,6 +62,7 @@ public class BufferPool {
      */
     public boolean read() {
         init(); //set up byte buffer + buffer array to empty
+        boolean notEmpty = false;
         try {
             file.read(basicBuffer);
         }
@@ -73,8 +74,9 @@ public class BufferPool {
             double recKey = bb.getDouble();
             Record rec = new Record(recID, recKey);
             enqueue(rec);
+            notEmpty = true;
         }
-        return true;
+        return notEmpty;
 
     }
 

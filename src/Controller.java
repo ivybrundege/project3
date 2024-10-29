@@ -20,13 +20,12 @@ public class Controller {
      * Number of blocks we can read at a time
      */
     public static final int NUM_HEAP_BLOCKS = 8; // number of blocks in the heap
-    // public static final int BLOCK_SIZE = 512; //number of records in a block
     private RandomAccessFile input; // input file
-    private RandomAccessFile run; // random access run file
+    private RandomAccessFile runFile; // random access run file
     private MinHeap<Record> heap; // 8 block heap
-    private BufferPool inBuffer;
-    private BufferPool outBuffer;
-    private int runs = 1; //ok. ultimately this will be a list but that's a lotta work for milestone 1
+    private BufferPool inBuffer; //input buffer
+    private BufferPool outBuffer; //output buffer
+    private DoubleLL runs; //holds the runs for a given sorting round
 
     /**
      * Constructor - initializes files for r+w
@@ -34,7 +33,7 @@ public class Controller {
      * @param inputname
      *            The input
      * @throws IOException
-     * @TODO do i need to specify run file size
+     * 
      */
     public Controller(String inputname) throws IOException {
         init(inputname);
@@ -68,12 +67,12 @@ public class Controller {
         
         //set up run file
         File runfile = new File("run.txt");
-        run = new RandomAccessFile(runfile, "rw");
-        run.seek(0);
+        runFile = new RandomAccessFile(runfile, "rw");
+        runFile.seek(0);
         
         //set up buffers
         inBuffer = new BufferPool(input);
-        outBuffer = new BufferPool(run);
+        outBuffer = new BufferPool(runFile);
         
     }
 
@@ -85,11 +84,25 @@ public class Controller {
      */
     public void sort() throws IOException {
         // step one: replacement sort
-        replacementSort();
+        runs = new DoubleLL();
+        Run curr = new Run(0);
+        int hidden = replacementSort(curr);
+        runs.append(curr);
+        for (int i = heap.getCapacity() - 1; i >= hidden; i++) //iterate thru hidden
+        {
+            Record r = heap.getPos(i);
+            inBuffer.enqueue(r);
+        }
+        while (!inBuffer.isEmpty()) //while input remains
+        {
+            curr = new Run(curr.getNumRecords() + curr.getStart()); //new run
+            hidden = replacementSort(curr);
+        }
+        
         //@TODO: multiple runs. ignoring that for first milestone
         //mergeSort();
         input.close();
-        run.close();
+        runFile.close();
     }
 
 
@@ -100,13 +113,15 @@ public class Controller {
      * @throws IOException
      * @TODO multiple runs?? potentially keep a list of removed values
      */
-    public void replacementSort() throws IOException {
-        int recordsCounted = 0;
+    public int replacementSort(Run curr) throws IOException {
+        int recordsCounted = 0; // prints 5 records/line
+        int recordsHidden = 0; //hidden records to add after
         while (heap.heapSize() != 0) {
             
             // first, add minimum heap value to output buffer
             Record toOutput = heap.removeMin();
             outBuffer.enqueue(toOutput);
+            curr.addRec(); //increment run
             if (outBuffer.isFull()) {
                 recordsCounted++;
                 outBuffer.write(recordsCounted);
@@ -123,7 +138,8 @@ public class Controller {
                 if (toHeap.compareTo(toOutput) < 0) 
                 {
                     heap.insert(toHeap);
-                    heap.removeMin(); // umm need to keep track of these somehow
+                    heap.removeMin(); 
+                    recordsHidden = heap.hide();
                 }
                 else // add input to heap
                 {
@@ -134,22 +150,21 @@ public class Controller {
         if (!outBuffer.isEmpty()) {
             outBuffer.write(recordsCounted); // write all remaining values
         }
+        return recordsHidden;
     }
     
     public void mergeSort() throws IOException
     {
         //first-- swap input and output files
         RandomAccessFile temp = input;
-        input = run;
-        run = temp;
-        run.seek(0); //set to beginning- we can now overwrite what's there i think
+        input = runFile;
+        runFile = temp;
+        runFile.seek(0); //set to beginning- we can now overwrite what's there i think
         input.seek(0); //set to beginning
         
         inBuffer = new BufferPool(input);
-        outBuffer = new BufferPool(run);
-        
-        //create working area-- for now we only have 1 run so im gonna ignore the rest
-        Record[] sortSpace = new Record[runs * ByteFile.RECORDS_PER_BLOCK]; 
+        outBuffer = new BufferPool(runFile);
+                
         
     }
 }
