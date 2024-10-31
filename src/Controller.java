@@ -187,39 +187,5 @@ public class Controller {
 
     }
 
-    /*
-     * {
-     * while (heap.heapSize() != 0) {
-     * 
-     * // first, add minimum heap value to output buffer
-     * Record toOutput = heap.removeMin();
-     * outBuffer.enqueue(toOutput);
-     * curr.addRec(); // increment run
-     * if (outBuffer.isFull()) {
-     * recordsCounted++;
-     * outBuffer.write(recordsCounted);
-     * }
-     * 
-     * // then, check to see if we can add something from input
-     * if (inBuffer.isEmpty()) {
-     * inBuffer.read();
-     * }
-     * 
-     * Record toHeap = inBuffer.dequeue();
-     * if (toHeap != null) {
-     * if (toHeap.compareTo(toOutput) < 0) {
-     * heap.insert(toHeap);
-     * heap.removeMin();
-     * }
-     * else // add input to heap
-     * {
-     * heap.insert(toHeap);
-     * }
-     * }
-     * }
-     * if (!outBuffer.isEmpty()) {
-     * outBuffer.write(recordsCounted); // write all remaining values
-     * }
-     * }
-     */
+    
 }

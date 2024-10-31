@@ -146,6 +146,7 @@ public class BufferPool {
      * @return true if inserted
      */
     public boolean enqueue(Record record) {
+        
         if (((rear + 2) % maxSize) == front) {
             return false; // array's full-- can't add yet.
         }
