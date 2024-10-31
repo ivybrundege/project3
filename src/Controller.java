@@ -141,6 +141,10 @@ public class Controller {
             if (!inBuffer.isEmpty()) // could still be empty if we're at end of file
             {
                 Record toHeap = inBuffer.dequeue();
+                if (toHeap == null)
+                {
+                    System.out.println("catch");
+                }
                 if (toHeap.compareTo(toWrite) < 0)
                 {
                     heap.insert(toHeap);
@@ -165,7 +169,6 @@ public class Controller {
         }
         System.out.println("finished repopulating");
         return curr;
-
     }
 
 

@@ -122,7 +122,9 @@ public class BufferPool {
      */
     public Record dequeue() {
         if (length() == 0)
+        {
             return null;
+        }
         Record r = buffer[front];
         front = (front + 1) % maxSize; // Circular increment
         return r;
@@ -149,9 +151,9 @@ public class BufferPool {
      */
     public boolean enqueue(Record record) {
         
-        if (((rear + 2) % maxSize) == front) {
+        /*if (((rear + 2) % maxSize) == front) {
             return false; // array's full-- can't add yet.
-        }
+        }*/
         rear = (rear + 1) % maxSize; // Circular increment
 
         buffer[rear] = record;
@@ -176,9 +178,9 @@ public class BufferPool {
      * @return True if buffer is empty
      */
     public boolean isEmpty() {
-        return length() == 0;
+        //return length() == 0;
         
-        //return front - rear == 1;
+        return front - rear == 1;
     }
 
 }
