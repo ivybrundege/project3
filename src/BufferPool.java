@@ -102,10 +102,12 @@ public class BufferPool {
         {
             System.out.println();
         }
-        while (r != null) {
+        int count = ByteFile.RECORDS_PER_BLOCK;
+        while (r != null && count >= 0) {
             bb.putLong(r.getID());
             bb.putDouble(r.getKey());
             r = dequeue();
+            count--;
         }
         file.write(basicBuffer);
     }
@@ -163,7 +165,8 @@ public class BufferPool {
      * @return True if buffer is full
      */
     public boolean isFull() {
-        return length() == maxSize - 1;
+        //return length() == maxSize - 1;
+        return (rear + 2) % maxSize == front;
     }
 
 
@@ -174,6 +177,8 @@ public class BufferPool {
      */
     public boolean isEmpty() {
         return length() == 0;
+        
+        //return front - rear == 1;
     }
 
 }

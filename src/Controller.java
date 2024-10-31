@@ -58,7 +58,6 @@ public class Controller {
                 double recKey = bb.getDouble();
                 Record rec = new Record(recID, recKey);
                 heapArray[i + block * ByteFile.RECORDS_PER_BLOCK] = rec;
-                // @TOOD: handle if there's not a full block
             }
         }
         heap = new MinHeap<Record>(heapArray, heapArray.length,
@@ -85,20 +84,20 @@ public class Controller {
         // step one: replacement sort
         runs = new DoubleLL();
         int start = 0;
-        inBuffer.read();
-
-        while (!inBuffer.isEmpty() || heap.heapSize() != 0) // while there's
-                                                            // still file left
-                                                            // to read.
+        inBuffer.read(); //get input started
+        while (!inBuffer.isEmpty())
         {
             Run curr = replacementSort(start);
-            runs.append(curr); // add next run
-            start = curr.getStart() + curr.getNumRecords(); // inc start.
+            runs.append(curr);
+            start = curr.getNumRecords() + curr.getStart();
         }
-        replacementSort(start); // one final one to empty heap. also idk if this
-                                // one is necessary but that's none of my
-                                // business.
-
+        //one final replacementSort to empty heap.
+        runs.append(replacementSort(start));
+        
+        //one final write just to b sure -- @TODO replace 0 w something meaningful idk.
+        outBuffer.write(0);
+        
+        
         // next step: merge sort :D
         // mergeSort();
         input.close();
@@ -116,58 +115,55 @@ public class Controller {
     public Run replacementSort(int start) throws IOException {
         int recordsCounted = 0; // prints 5 records/line
         Run curr = new Run(start);
-
-        while (!inBuffer.isEmpty() && heap.heapSize() != 0) {
-            // 1. Write minimum to output file
-            Record toWrite = heap.removeMin();
-            recordsCounted++;
-            curr.addRec(); // increment this run
-            outBuffer.enqueue(toWrite);
-            if (outBuffer.isFull()) {
-                outBuffer.write(recordsCounted);
-            }
-
-            // 2. Add next input into heap
-            Record toHeap = inBuffer.dequeue();
-            if (toHeap.compareTo(toWrite) < 0) // toHeap < toWrite
+        int hidden = 0;
+        System.out.println("next run");
+        int j = 0;
+        while (heap.heapSize() != 0)
+        {
+            
+            //1. refill buffer if needed
+            if (inBuffer.isEmpty())
             {
-                heap.insert(toHeap);
-                heap.removeMin(); // store as hidden.
-            }
-            else // valid to add to heap and continue this run
-            {
-                heap.insert(toHeap); // just add to the heap.
-            }
-            if (inBuffer.isEmpty()) {
-                // System.out.println("reading in");
                 inBuffer.read();
             }
-        }
-
-        // first- keep track of current heap size. this will be used to
-        // determine hidden values that need to be added to next run.
-        int hidden = heap.heapSize();
-
-        // now, empty the heap into output
-        while (heap.heapSize() != 0) {
+            
+            //2. output next value
             Record toWrite = heap.removeMin();
             outBuffer.enqueue(toWrite);
-            if (outBuffer.isFull()) {
+            curr.addRec(); //increment run
+            if (outBuffer.isFull()) 
+            {
                 recordsCounted++;
                 outBuffer.write(recordsCounted);
             }
+            
+            //3. Add next from input 
+            if (!inBuffer.isEmpty()) // could still be empty if we're at end of file
+            {
+                Record toHeap = inBuffer.dequeue();
+                if (toHeap.compareTo(toWrite) < 0)
+                {
+                    heap.insert(toHeap);
+                    heap.removeMin(); //hide for next round
+                    hidden++;
+                }
+                else
+                {
+                    heap.insert(toHeap);
+                }
+            }
+            //continue until heap runs out
         }
-
-        // carry any hidden values into the next run.
-        for (int i = hidden; i < heap.getCapacity(); i++) {
-            heap.insert(heap.getPos(i)); // heap.removeMin()?
+        
+        System.out.println("\n HIDDEN: " + hidden + "\n");
+        System.out.println("heap size: " + heap.heapSize());
+        //once heap is empty: @TODO check cause wtf is this.
+        int ogSize = heap.heapSize();
+        for (int i = 0; i < hidden - 2; i++)
+        {
+            heap.insert(heap.getPos(ogSize + i));
         }
-
-        // one final write: for whatever's left?? or would i not do that till
-        // the next time idk
-        // outBuffer.write(recordsCounted);
-
-        // return this run
+        System.out.println("finished repopulating");
         return curr;
 
     }
