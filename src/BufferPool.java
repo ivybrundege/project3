@@ -60,23 +60,23 @@ public class BufferPool {
      * 
      * @return whether or not the record was read.
      */
-    public boolean read() {
+    public int read() {
         init(); //set up byte buffer + buffer array to empty
-        boolean notEmpty = false;
+        int count = 0;
         try {
             file.read(basicBuffer);
         }
         catch (IOException e) {
-            return false; // end of file
+            return -1; // end of file
         }
         while (bb.hasRemaining()) {
             long recID = bb.getLong();
             double recKey = bb.getDouble();
             Record rec = new Record(recID, recKey);
             enqueue(rec);
-            notEmpty = true;
+            count++;
         }
-        return notEmpty;
+        return count;
 
     }
 
