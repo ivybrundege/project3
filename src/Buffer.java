@@ -17,6 +17,7 @@ public class Buffer {
     private ByteBuffer bb;
     private RandomAccessFile file;
     private int size;
+    private int rowCount;
     
     
     /**
@@ -34,6 +35,7 @@ public class Buffer {
         //readBlock();
         size = 0;
         //ok so now we have a fully loaded buffer. slay.
+        rowCount = -1; //shouldn't be using for read
     }
     
     /**
@@ -50,6 +52,7 @@ public class Buffer {
         file = new RandomAccessFile(runFile, "rw"); 
         file.seek(0); //start at beginning
         size = 0;
+        rowCount = 0;
     }
 
     public boolean readBlock() throws IOException
@@ -89,13 +92,18 @@ public class Buffer {
         size++;
         if (size == ByteFile.RECORDS_PER_BLOCK)
         {
-            write();
+            rowCount++;
+            write(id, key);
         }
     }
     
-    public void write() throws IOException
+    public void write(long id, double key) throws IOException
     {
-        System.out.println("wrote buffer");
+        System.out.print(id + " " + key);
+        if (rowCount % 5 == 0)
+        {
+            System.out.println();
+        }
         file.write(buffer);
         bb.clear(); 
         size = 0;
