@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 public class Buffer {
     private byte[] buffer;
     private ByteBuffer bb;
+    private File f;
     private RandomAccessFile file;
     private int size;
     private int rowCount;
@@ -30,7 +31,8 @@ public class Buffer {
         buffer = new byte[ByteFile.BYTES_PER_BLOCK]; //stores the entire block. 
         bb = ByteBuffer.wrap(buffer); //stores as byte buffer
         bb.position(0); //start at beggining
-        file = new RandomAccessFile(new File(filename), "rw");
+        f = new File(filename);
+        file = new RandomAccessFile(f, "rw");
         file.seek(0); //start at beginning
         //readBlock();
         size = 0;
@@ -47,9 +49,9 @@ public class Buffer {
         buffer = new byte[ByteFile.BYTES_PER_BLOCK]; //stores the entire block. 
         bb = ByteBuffer.wrap(buffer); //stores as byte buffer
         bb.position(0); //start at beggining
-        File runFile = new File("run.bin");
-        runFile.delete(); //ensure file is empty
-        file = new RandomAccessFile(runFile, "rw"); 
+        f = new File("run.bin");
+        f.delete(); //ensure file is empty
+        file = new RandomAccessFile(f, "rw"); 
         file.seek(0); //start at beginning
         size = 0;
         rowCount = 0;
@@ -67,7 +69,11 @@ public class Buffer {
         bb.position(0); //start at beginning of our buffer.
         size = ByteFile.RECORDS_PER_BLOCK;
         int pos = bb.position();
-        System.out.print(bb.getLong() + " " + bb.getDouble());
+        long id = bb.getLong();
+        double key = bb.getDouble();
+        Record r = new Record(id, key);
+        System.out.print(r.getID() + " " + r.getKey() + " ");
+        
         if (rowCount % 5 == 0)
         {
             System.out.println();
@@ -107,11 +113,6 @@ public class Buffer {
     
     public void write(long id, double key) throws IOException
     {
-        //System.out.print(id + " " + key);
-        if (rowCount % 5 == 0)
-        {
-           // System.out.println();
-        }
         file.write(buffer);
         bb.clear(); 
         size = 0;
@@ -125,5 +126,10 @@ public class Buffer {
     public boolean isEmpty()
     {
         return !bb.hasRemaining();
+    }
+    
+    public void rename(String name)
+    {
+        f.renameTo(new File(name));
     }
 }

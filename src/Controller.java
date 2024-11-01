@@ -27,6 +27,7 @@ public class Controller {
     //private BufferPool outBuffer; // output buffer
     private DoubleLL runs; // holds the runs for a given sorting round
     //private File runf;
+    private String fname;
 
     
     private Buffer inBuffer;
@@ -40,6 +41,7 @@ public class Controller {
      * 
      */
     public Controller(String inputname) throws IOException {
+        fname = inputname;
         inBuffer = new Buffer(inputname);
         outBuffer = new Buffer();
         buildHeap();
@@ -121,6 +123,13 @@ public class Controller {
             start = curr.getStart() + curr.getNumRecords(); //increment start
         }
         runs.append(replacementSort(start)); //one final one to empty heap.
+        
+        //mergesort
+        
+        //then switch run and input files.
+        inBuffer.rename("placeholder");
+        outBuffer.rename(fname);
+        inBuffer.rename("./F24P3ExternalSorting/run.bin");
     }
 
     
