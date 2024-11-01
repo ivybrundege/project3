@@ -100,7 +100,7 @@ public class Buffer {
         size++;
         if (size == ByteFile.RECORDS_PER_BLOCK)
         {
-            rowCount++;
+            //rowCount++;
             write(id, key);
         }
     }
