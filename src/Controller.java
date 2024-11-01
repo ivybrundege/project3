@@ -20,14 +20,17 @@ public class Controller {
      * Number of blocks we can read at a time
      */
     public static final int NUM_HEAP_BLOCKS = 8; // number of blocks in the heap
-    private RandomAccessFile input; // input file
-    private RandomAccessFile runFile; // random access run file
+    //private RandomAccessFile input; // input file
+    //private RandomAccessFile runFile; // random access run file
     private MinHeap<Record> heap; // 8 block heap
-    private BufferPool inBuffer; // input buffer
-    private BufferPool outBuffer; // output buffer
+    //private BufferPool inBuffer; // input buffer
+    //private BufferPool outBuffer; // output buffer
     private DoubleLL runs; // holds the runs for a given sorting round
-    private File runf;
+    //private File runf;
 
+    
+    private Buffer inBuffer;
+    private Buffer outBuffer;
     /**
      * Constructor - initializes files for r+w
      * 
@@ -37,42 +40,68 @@ public class Controller {
      * 
      */
     public Controller(String inputname) throws IOException {
-        byte[] basicBuffer = new byte[ByteFile.BYTES_PER_BLOCK];
-        ByteBuffer bb = ByteBuffer.wrap(basicBuffer);
-        File inputfile = new File(inputname);
-        input = new RandomAccessFile(inputfile, "rw");
-        input.seek(0);
-        init(basicBuffer, bb);
+        inBuffer = new Buffer(inputname);
+        outBuffer = new Buffer();
+        buildHeap();
     }
-
-
-    private void init(byte[] basicBuffer, ByteBuffer bb) throws IOException {
-        // create heap
-        Record[] heapArray = new Record[NUM_HEAP_BLOCKS
-            * ByteFile.RECORDS_PER_BLOCK];
-        for (int block = 0; block < NUM_HEAP_BLOCKS; block++) {
-            input.read(basicBuffer); // read in the next block
-            bb.position(0); // goes to byte position zero in ByteBuffer
-            for (int i = 0; i < ByteFile.RECORDS_PER_BLOCK; i++) { // iterate
-                long recID = bb.getLong();
-                double recKey = bb.getDouble();
-                Record rec = new Record(recID, recKey);
-                heapArray[i + block * ByteFile.RECORDS_PER_BLOCK] = rec;
+    
+    private void buildHeap() throws IOException
+    {
+        Record[] heapArray = new Record[NUM_HEAP_BLOCKS * ByteFile.RECORDS_PER_BLOCK];
+        for (int i = 0; i < NUM_HEAP_BLOCKS; i++)
+        {
+            inBuffer.readBlock();
+            for (int j = 0; j < ByteFile.RECORDS_PER_BLOCK; j++)
+            {
+                heapArray[j + 512 * i] = inBuffer.getRecord();
             }
         }
-        heap = new MinHeap<Record>(heapArray, heapArray.length,
-            heapArray.length);
-
-        // set up run file
-        runf = new File("run.txt");
-        runFile = new RandomAccessFile(runf, "rw");
-        runFile.seek(0);
-
-        // set up buffers
-        inBuffer = new BufferPool(input);
-        outBuffer = new BufferPool(runFile);
-
+        heap = new MinHeap<Record>(heapArray, heapArray.length, heapArray.length);
     }
+
+    /**
+     * Replacement sort-- takes fully unsorted file + sorts into runs.
+     * @param start
+     * @return
+     * @throws IOException
+     */
+    public Run replacementSort(int start) throws IOException
+    {
+        Run curr = new Run(start);
+        int hidden = 0;
+        while (heap.heapSize() != 0)
+        {
+            //1. Remove current minimum from heap
+            Record toWrite = heap.removeMin();
+            outBuffer.addRecord(toWrite); //also handles writing to file.
+            curr.addRec(); //increment current run
+            
+            //2. get next input value
+            Record toHeap = inBuffer.getRecord();
+            if (toHeap != null)
+            {
+                if (toHeap.compareTo(toWrite) < 0)
+                {
+                    //then hide.
+                    heap.insert(toHeap);
+                    heap.removeMin();
+                    hidden++;
+                }
+                else
+                {
+                    heap.insert(toHeap);
+                }
+            }
+        }
+        //once heap is empty:
+        int ogSize = heap.heapSize();
+        for (int i = 0; i < hidden; i++)
+        {
+            heap.insert(heap.getPos(ogSize + i));
+        }
+        return curr;
+    }
+
 
 
     /**
@@ -84,106 +113,14 @@ public class Controller {
         // step one: replacement sort
         runs = new DoubleLL();
         int start = 0;
-        inBuffer.read(); //get input started
-        while (!inBuffer.isEmpty())
+        
+        while (inBuffer.readBlock() || !inBuffer.isEmpty()) //while file/buffer remains
         {
             Run curr = replacementSort(start);
             runs.append(curr);
-            start = curr.getNumRecords() + curr.getStart();
+            start = curr.getStart() + curr.getNumRecords(); //increment start
         }
-        //one final replacementSort to empty heap.
-        runs.append(replacementSort(start));
-        
-        //one final write just to b sure -- @TODO replace 0 w something meaningful idk.
-        outBuffer.write(0);
-        
-        
-        // next step: merge sort :D
-        // mergeSort();
-        input.close();
-        runFile.close();
-        runf.delete();
-    }
-
-
-    // ----------------------------------------------------------
-    /**
-     * replacement sort algorithm
-     * 
-     * @throws IOException
-     */
-    public Run replacementSort(int start) throws IOException {
-        int recordsCounted = 0; // prints 5 records/line
-        Run curr = new Run(start);
-        int hidden = 0;
-        System.out.println("next run");
-        int j = 0;
-        while (heap.heapSize() != 0)
-        {
-            
-            //1. refill buffer if needed
-            if (inBuffer.isEmpty())
-            {
-                inBuffer.read();
-            }
-            
-            //2. output next value
-            Record toWrite = heap.removeMin();
-            outBuffer.enqueue(toWrite);
-            curr.addRec(); //increment run
-            if (outBuffer.isFull()) 
-            {
-                recordsCounted++;
-                outBuffer.write(recordsCounted);
-            }
-            
-            //3. Add next from input 
-            if (!inBuffer.isEmpty()) // could still be empty if we're at end of file
-            {
-                Record toHeap = inBuffer.dequeue();
-                if (toHeap == null)
-                {
-                    System.out.println("catch");
-                }
-                if (toHeap.compareTo(toWrite) < 0)
-                {
-                    heap.insert(toHeap);
-                    heap.removeMin(); //hide for next round
-                    hidden++;
-                }
-                else
-                {
-                    heap.insert(toHeap);
-                }
-            }
-            //continue until heap runs out
-        }
-        
-        System.out.println("\n HIDDEN: " + hidden + "\n");
-        System.out.println("heap size: " + heap.heapSize());
-        //once heap is empty: @TODO check cause wtf is this.
-        int ogSize = heap.heapSize();
-        for (int i = 0; i < hidden - 2; i++)
-        {
-            heap.insert(heap.getPos(ogSize + i));
-        }
-        System.out.println("finished repopulating");
-        return curr;
-    }
-
-
-    public void mergeSort() throws IOException {
-        // first-- swap input and output files
-        RandomAccessFile temp = input;
-        input = runFile;
-        runFile = temp;
-        runFile.seek(0); // set to beginning- we can now overwrite what's there
-                         // i think
-        input.seek(0); // set to beginning
-
-        inBuffer = new BufferPool(input);
-        outBuffer = new BufferPool(runFile);
-
+        runs.append(replacementSort(start)); //one final one to empty heap.
     }
 
     
