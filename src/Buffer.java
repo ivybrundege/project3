@@ -35,7 +35,7 @@ public class Buffer {
         //readBlock();
         size = 0;
         //ok so now we have a fully loaded buffer. slay.
-        rowCount = -1; //shouldn't be using for read
+        rowCount = 0; 
     }
     
     /**
@@ -57,6 +57,7 @@ public class Buffer {
 
     public boolean readBlock() throws IOException
     {
+        rowCount++;
         if (file.getFilePointer() == file.length())
         {
             return false; //end of file
@@ -65,6 +66,13 @@ public class Buffer {
         file.read(buffer);
         bb.position(0); //start at beginning of our buffer.
         size = ByteFile.RECORDS_PER_BLOCK;
+        int pos = bb.position();
+        System.out.print(bb.getLong() + " " + bb.getDouble());
+        if (rowCount % 5 == 0)
+        {
+            System.out.println();
+        }
+        bb.position(pos); //revert to previous position
         return true;
     }
     
@@ -99,10 +107,10 @@ public class Buffer {
     
     public void write(long id, double key) throws IOException
     {
-        System.out.print(id + " " + key);
+        //System.out.print(id + " " + key);
         if (rowCount % 5 == 0)
         {
-            System.out.println();
+           // System.out.println();
         }
         file.write(buffer);
         bb.clear(); 
